@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShowPro — Manager Financials 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&family=Calibri:wght@400;600;700&display=swap');
+
+  :root {
+    /* Excel theme palette — exact source file colors */
+    --navy:    #0E2841;   /* dk2  — primary dark */
+    --teal:    #156082;   /* accent1 — primary brand */
+    --orange:  #E97132;   /* accent2 */
+    --green:   #196B24;   /* accent3 */
+    --sky:     #0F9ED5;   /* accent4 */
+    --purple:  #A02B93;   /* accent5 */
+    --lime:    #4EA72E;   /* accent6 */
+    --lt2:     #E8E8E8;   /* lt2 — light gray */
+
+    /* Light theme surfaces */
+    --bg:      #F5F6F8;
+    --surface: #FFFFFF;
+    --surface2: #F0F2F5;
+    --border:  #DDE1E8;
+    --border2: #C8CDD8;
+
+    /* Text hierarchy */
+    --text:    #0E2841;   /* dk2 = navy for main text */
+    --text2:   #4A5568;
+    --text3:   #9AA3B2;
+
+    /* Semantic */
+    --accent:  #156082;   /* teal — primary */
+    --accent2: #E97132;   /* orange */
+    --accent3: #0F9ED5;   /* sky blue */
+    --warn:    #E97132;
+    --pos:     #196B24;   /* green */
+    --neg:     #C0392B;   /* red (standard neg) */
+
+    --mono: 'Source Code Pro', 'Courier New', monospace;
+    --sans: 'Calibri', 'Aptos Narrow', 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 2px solid var(--teal);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--navy);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--teal);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    color: #FFFFFF;
+    letter-spacing: -1px;
+  }
+
+  .logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; color: #FFFFFF; }
+  .logo-sub { font-size: 11px; color: rgba(255,255,255,0.55); font-family: var(--mono); letter-spacing: 1px; text-transform: uppercase; }
+
+  .header-meta {
+    display: flex; gap: 24px; align-items: center;
+  }
+
+  .meta-pill {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+  }
+
+  .meta-pill span { color: #FFFFFF; font-weight: 600; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border);
+    gap: 0;
+    overflow-x: auto;
+    background: var(--surface);
+  }
+
+  .tab {
+    padding: 14px 22px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .tab:hover { color: var(--teal); background: rgba(21,96,130,0.04); }
+  .tab.active { color: var(--teal); border-bottom-color: var(--teal); background: rgba(21,96,130,0.05); }
+
+  .tab-badge {
+    display: inline-block;
+    background: var(--lt2);
+    color: var(--text2);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 10px;
+    margin-left: 6px;
+    font-family: var(--mono);
+  }
+
+  /* PANELS */
+  .panel { display: none; padding: 32px; }
+  .panel.active { display: block; }
+
+  /* KPI ROW */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(14,40,65,0.06);
+  }
+
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent-color, var(--teal));
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+
+  .kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 6px;
+    color: var(--navy);
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text2);
+  }
+
+  .kpi-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-family: var(--mono);
+    font-weight: 500;
+  }
+
+  .kpi-delta.pos { color: var(--pos); }
+  .kpi-delta.neg { color: var(--neg); }
+
+  /* CHART GRID */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .chart-grid.full { grid-template-columns: 1fr; }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(14,40,65,0.06);
+  }
+
+  .chart-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    margin-bottom: 4px;
+    color: var(--navy);
+  }
+
+  .chart-subtitle {
+    font-size: 11px;
+    color: var(--text2);
+    font-family: var(--mono);
+    margin-bottom: 20px;
+  }
+
+  .chart-wrap { position: relative; height: 220px; }
+
+  /* TABLES */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(14,40,65,0.06);
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .table-title { font-size: 14px; font-weight: 700; color: var(--navy); }
+  .table-count { font-size: 11px; color: var(--text2); font-family: var(--mono); }
+
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    background: var(--navy);
+    color: rgba(255,255,255,0.82);
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 10px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  thead th:hover { background: var(--teal); color: #fff; }
+  thead th.sort-asc::after { content: ' ↑'; color: var(--sky); }
+  thead th.sort-desc::after { content: ' ↓'; color: var(--sky); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--lt2);
+    transition: background 0.12s;
+  }
+
+  tbody tr:hover { background: rgba(21,96,130,0.04); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:nth-child(even) { background: var(--surface2); }
+  tbody tr:nth-child(even):hover { background: rgba(21,96,130,0.06); }
+
+  tbody td {
+    padding: 9px 16px;
+    white-space: nowrap;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  tbody td.text-col {
+    font-family: var(--sans);
+    font-size: 13px;
+    white-space: normal;
+    max-width: 260px;
+    color: var(--navy);
+  }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: var(--mono);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .badge-won     { background: #D4EDDA; color: #196B24; border: 1px solid #A8D5B5; }
+  .badge-sent    { background: #D0E8F5; color: #156082; border: 1px solid #9DCCE8; }
+  .badge-accept  { background: #FCE8D7; color: #C05A1A; border: 1px solid #F2C4A0; }
+  .badge-rev     { background: #F5E6F5; color: #7A2070; border: 1px solid #DDB8DC; }
+  .badge-prequal { background: var(--lt2); color: var(--text2); border: 1px solid var(--border2); }
+
+  /* NUMERIC CELLS */
+  .num { text-align: right; }
+  .pos-val { color: var(--pos); font-weight: 600; }
+  .neg-val { color: var(--neg); font-weight: 600; }
+  .neutral-val { color: var(--text); }
+
+  /* SEARCH + FILTERS */
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--surface2);
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 7px 12px;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .search-box input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    width: 100%;
+  }
+
+  .search-box input::placeholder { color: var(--text3); }
+
+  .filter-select {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .filter-select:focus { border-color: var(--teal); }
+
+  /* CSV UPLOAD */
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: 10px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 24px;
+    position: relative;
+    background: var(--surface2);
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--teal);
+    background: rgba(21,96,130,0.05);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon { font-size: 28px; margin-bottom: 10px; color: var(--teal); }
+  .upload-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--navy); }
+  .upload-hint { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+
+  .upload-success {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #D4EDDA;
+    border: 1px solid #A8D5B5;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #196B24;
+  }
+
+  .upload-success .icon { color: #196B24; font-size: 18px; }
+
+  /* SECTION DIVIDER */
+  .section-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text2);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* VARIANCE BAR */
+  .var-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .var-bar { width: 80px; height: 5px; background: var(--lt2); border-radius: 3px; overflow: hidden; }
+  .var-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+  /* PAGINATION */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    background: var(--surface2);
+  }
+
+  .page-btns { display: flex; gap: 4px; }
+
+  .page-btn {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 4px 10px;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    transition: all 0.15s;
+  }
+
+  .page-btn:hover { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .page-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .page-btn:disabled { opacity: 0.3; cursor: default; }
+
+  /* MONTHLY SUMMARY TABLE special */
+  .summary-table td { font-size: 13px; }
+  .month-col { font-weight: 600; color: var(--navy); font-family: var(--sans); }
+
+  /* GP MARGIN GAUGE */
+  .gauge-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .gauge-label { font-family: var(--mono); font-size: 11px; color: var(--text2); width: 28px; }
+  .gauge-track { flex: 1; height: 6px; background: var(--lt2); border-radius: 3px; overflow: hidden; }
+  .gauge-fill { height: 100%; border-radius: 3px; }
+  .gauge-pct { font-family: var(--mono); font-size: 11px; width: 42px; text-align: right; }
+
+  @media (max-width: 768px) {
+    .header { padding: 14px 16px; }
+    .tabs { padding: 0 16px; }
+    .panel { padding: 20px 16px; }
+    .chart-grid { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+    .header-meta { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-mark">SP</div>
+    <div>
+      <div class="logo-text">ShowPro</div>
+      <div class="logo-sub">Manager Financials</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="meta-pill">As of <span>Jan 21, 2026</span></div>
+    <div class="meta-pill">Prepared <span>03/26/2026</span></div>
+    <div class="meta-pill">YTD Trend <span>$480,294</span></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tab active" onclick="showTab('forecast')">Production Forecast</div>
+  <div class="tab" onclick="showTab('overhead')">GP to Overhead</div>
+  <div class="tab" onclick="showTab('summary')">Production Summary</div>
+  <div class="tab" onclick="showTab('hubspot')">HubSpot <span class="tab-badge">114</span></div>
+  <div class="tab" onclick="showTab('qbo')">QBO <span class="tab-badge">41</span></div>
+</nav>
+
+<!-- ===================== PRODUCTION FORECAST ===================== -->
+<div id="panel-forecast" class="panel active">
+  <div class="kpi-row">
+    <div class="kpi" style="--accent-color: var(--teal)">
+      <div class="kpi-label">Total Target Revenue</div>
+      <div class="kpi-value">$15.0M</div>
+      <div class="kpi-sub">FY 2026</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--sky)">
+      <div class="kpi-label">Total Actual Revenue</div>
+      <div class="kpi-value">$13.0M</div>
+      <div class="kpi-delta neg">↓ $2.0M vs target</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--teal)">
+      <div class="kpi-label">Total Actual GP</div>
+      <div class="kpi-value">$7.2M</div>
+      <div class="kpi-sub">vs $8.25M target</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--orange)">
+      <div class="kpi-label">Blended GP Margin</div>
+      <div class="kpi-value">55.5%</div>
+      <div class="kpi-sub">Target: 55.0%</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--orange)">
+      <div class="kpi-label">YTD Trend</div>
+      <div class="kpi-value">$480K</div>
+      <div class="kpi-sub">As of Jan 21, 2026</div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">Revenue: Target vs Actual</div>
+      <div class="chart-subtitle">Monthly, FY 2026 · all figures in $000s</div>
+      <div class="chart-wrap"><canvas id="chartRevTA"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">GP: Target vs Actual</div>
+      <div class="chart-subtitle">Monthly, FY 2026 · all figures in $000s</div>
+      <div class="chart-wrap"><canvas id="chartGPTA"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid full">
+    <div class="chart-card">
+      <div class="chart-title">Revenue Actual vs Target Variance</div>
+      <div class="chart-subtitle">Positive = ahead of target · negative = behind</div>
+      <div class="chart-wrap"><canvas id="chartRevVar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Monthly Detail</div>
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th class="num">Target Rev</th>
+            <th class="num">Actual Rev</th>
+            <th class="num">Rev A/T</th>
+            <th class="num">Target GP</th>
+            <th class="num">Actual GP</th>
+            <th class="num">GP A/T</th>
+            <th class="num">GP %</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyForecast"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== GP TO OVERHEAD ===================== -->
+<div id="panel-overhead" class="panel">
+  <div class="kpi-row">
+    <div class="kpi" style="--accent-color: var(--orange)">
+      <div class="kpi-label">Total Overhead</div>
+      <div class="kpi-value">$5.50M</div>
+      <div class="kpi-sub">FY 2026</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--teal)">
+      <div class="kpi-label">Total Actual GP</div>
+      <div class="kpi-value">$7.22M</div>
+      <div class="kpi-sub">vs $8.40M budget</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--sky)">
+      <div class="kpi-label">Actual vs Overhead</div>
+      <div class="kpi-value">+$1.72M</div>
+      <div class="kpi-delta pos">↑ +31.3% above OH</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--orange)">
+      <div class="kpi-label">YTD Trend (GP)</div>
+      <div class="kpi-value">$599K</div>
+      <div class="kpi-sub">As of Jan 21, 2026</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--teal)">
+      <div class="kpi-label">Blended GP %</div>
+      <div class="kpi-value">55.9%</div>
+      <div class="kpi-sub">Weighted average</div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">GP vs Overhead by Month</div>
+      <div class="chart-subtitle">Actual GP vs overhead — coverage ratio</div>
+      <div class="chart-wrap"><canvas id="chartGPOH"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Actual vs Budget Variance</div>
+      <div class="chart-subtitle">GP actual less budget GP per month</div>
+      <div class="chart-wrap"><canvas id="chartActVsBudget"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">GP to Overhead Detail</div>
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th class="num">Overhead</th>
+            <th class="num">Budget GP</th>
+            <th class="num">Actual GP</th>
+            <th class="num">GP %</th>
+            <th class="num">Act vs Budget</th>
+            <th class="num">Act vs OH</th>
+            <th class="num">% +/- OH</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyOverhead"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PRODUCTION SUMMARY ===================== -->
+<div id="panel-summary" class="panel">
+  <div class="kpi-row">
+    <div class="kpi" style="--accent-color: var(--teal)">
+      <div class="kpi-label">Grand Total Revenue</div>
+      <div class="kpi-value">$13.0M</div>
+      <div class="kpi-sub">All 12 months</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--sky)">
+      <div class="kpi-label">Grand Total GP</div>
+      <div class="kpi-value">$7.22M</div>
+      <div class="kpi-sub">Gross profit 2026</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--orange)">
+      <div class="kpi-label">Avg GP Margin</div>
+      <div class="kpi-value">55.6%</div>
+      <div class="kpi-sub">Weighted average</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--teal)">
+      <div class="kpi-label">Peak Revenue Month</div>
+      <div class="kpi-value">Jun</div>
+      <div class="kpi-sub">$3.16M revenue</div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">Revenue & Gross Profit by Month</div>
+      <div class="chart-subtitle">Actual results — Gross Profit Tracker</div>
+      <div class="chart-wrap"><canvas id="chartSummaryRev"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">GP Margin % by Month</div>
+      <div class="chart-subtitle">Gross profit margin — actual</div>
+      <div class="chart-wrap"><canvas id="chartSummaryMargin"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Monthly Gross Profit Tracker</div>
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th class="num">Revenue</th>
+            <th class="num">Gross Profit</th>
+            <th class="num">GP Margin %</th>
+            <th>Margin Bar</th>
+          </tr>
+        </thead>
+        <tbody id="tbodySummary"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== HUBSPOT ===================== -->
+<div id="panel-hubspot" class="panel">
+  <div id="hubspot-upload-success" style="display:none"></div>
+  <div class="upload-zone" id="hsUploadZone">
+    <input type="file" accept=".csv" onchange="handleCSVUpload(event, 'hubspot')">
+    <div class="upload-icon">☁</div>
+    <div class="upload-title">Upload HubSpot CSV Export</div>
+    <div class="upload-hint">Drag & drop or click to browse · .csv files only</div>
+  </div>
+
+  <div class="kpi-row" id="hs-kpis">
+    <div class="kpi" style="--accent-color: var(--teal)">
+      <div class="kpi-label">Total Deals</div>
+      <div class="kpi-value" id="hs-kpi-deals">114</div>
+      <div class="kpi-sub">All stages</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--sky)">
+      <div class="kpi-label">Total Pipeline Value</div>
+      <div class="kpi-value" id="hs-kpi-pipeline">$13.0M</div>
+      <div class="kpi-sub">Actual Revenue</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--teal)">
+      <div class="kpi-label">Total Actual GP</div>
+      <div class="kpi-value" id="hs-kpi-gp">$7.2M</div>
+      <div class="kpi-sub">Gross profit</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--orange)">
+      <div class="kpi-label">Closed Won</div>
+      <div class="kpi-value" id="hs-kpi-won">—</div>
+      <div class="kpi-sub">Deals closed won</div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="toolbar">
+      <div class="search-box">
+        <span style="color:var(--text2)">⌕</span>
+        <input type="text" id="hs-search" placeholder="Search deals, owners, project IDs…" oninput="filterHS()">
+      </div>
+      <select class="filter-select" id="hs-stage-filter" onchange="filterHS()">
+        <option value="">All Stages</option>
+        <option>Closed Won</option>
+        <option>Bid Accepted</option>
+        <option>Bid Sent</option>
+        <option>Bid Revision</option>
+        <option>Pre-Qualified Event</option>
+        <option>Bid Requested</option>
+      </select>
+      <select class="filter-select" id="hs-month-filter" onchange="filterHS()">
+        <option value="">All Months</option>
+      </select>
+      <select class="filter-select" id="hs-owner-filter" onchange="filterHS()">
+        <option value="">All Owners</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortHS('dealName')">Deal Name</th>
+            <th onclick="sortHS('projectId')">Project ID</th>
+            <th onclick="sortHS('dealStage')">Stage</th>
+            <th onclick="sortHS('dealOwner')">Owner</th>
+            <th onclick="sortHS('closeDate')">Close Date</th>
+            <th class="num" onclick="sortHS('actualRev')">Actual Rev</th>
+            <th class="num" onclick="sortHS('actualGP')">Actual GP</th>
+            <th class="num" onclick="sortHS('actualGpPct')">GP %</th>
+            <th class="num" onclick="sortHS('qboAmount')">QBO Amt</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyHS"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="hs-pagination"></div>
+  </div>
+</div>
+
+<!-- ===================== QBO ===================== -->
+<div id="panel-qbo" class="panel">
+  <div id="qbo-upload-success" style="display:none"></div>
+  <div class="upload-zone" id="qboUploadZone">
+    <input type="file" accept=".csv" onchange="handleCSVUpload(event, 'qbo')">
+    <div class="upload-icon">☁</div>
+    <div class="upload-title">Upload QBO CSV Export</div>
+    <div class="upload-hint">Drag & drop or click to browse · .csv files only</div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi" style="--accent-color: var(--teal)">
+      <div class="kpi-label">Total Projects</div>
+      <div class="kpi-value" id="qbo-kpi-projects">41</div>
+      <div class="kpi-sub">Jan–Feb 2026</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--sky)">
+      <div class="kpi-label">Total Income</div>
+      <div class="kpi-value" id="qbo-kpi-income">$604K</div>
+      <div class="kpi-sub">Jan only in data</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--teal)">
+      <div class="kpi-label">Total GP</div>
+      <div class="kpi-value" id="qbo-kpi-gp">$384K</div>
+      <div class="kpi-sub">QBO actuals</div>
+    </div>
+    <div class="kpi" style="--accent-color: var(--orange)">
+      <div class="kpi-label">Avg GP Margin</div>
+      <div class="kpi-value" id="qbo-kpi-margin">70.5%</div>
+      <div class="kpi-sub">Weighted avg</div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="toolbar">
+      <div class="search-box">
+        <span style="color:var(--text2)">⌕</span>
+        <input type="text" id="qbo-search" placeholder="Search projects, customers…" oninput="filterQBO()">
+      </div>
+      <select class="filter-select" id="qbo-month-filter" onchange="filterQBO()">
+        <option value="">All Months</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortQBO('project')">Project</th>
+            <th onclick="sortQBO('customer')">Customer</th>
+            <th onclick="sortQBO('month')">Month</th>
+            <th class="num" onclick="sortQBO('income')">Income</th>
+            <th class="num" onclick="sortQBO('cost')">Cost</th>
+            <th class="num" onclick="sortQBO('gp')">GP</th>
+            <th class="num" onclick="sortQBO('gpPct')">GP %</th>
+            <th onclick="sortQBO('endDate')">End Date</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyQBO"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="qbo-pagination"></div>
+  </div>
+</div>
+
+<script>
+// ==================== DATA ====================
+const DATA = {"productionForecast":[{"month":"2026-01","targetRev":273553.09,"actualRev":604312.15,"revAT":330759.06,"targetGP":150454.2,"actualGP":384079.07,"gpAT":233624.87,"gpPct":0.635564},{"month":"2026-02","targetRev":1217479.3,"actualRev":1645800.32,"revAT":428321.02,"targetGP":669613.62,"actualGP":917302.79,"gpAT":247689.17,"gpPct":0.55736},{"month":"2026-03","targetRev":1106568.27,"actualRev":1104714.25,"revAT":-1854.02,"targetGP":608612.55,"actualGP":607592.84,"gpAT":-1019.71,"gpPct":0.55},{"month":"2026-04","targetRev":405125.31,"actualRev":438628.9,"revAT":33503.59,"targetGP":222818.92,"actualGP":241245.89,"gpAT":18426.97,"gpPct":0.55},{"month":"2026-05","targetRev":1712407.65,"actualRev":2120827.49,"revAT":408419.84,"targetGP":941824.21,"actualGP":1166455.12,"gpAT":224630.91,"gpPct":0.55},{"month":"2026-06","targetRev":2613079.5,"actualRev":3155006.27,"revAT":541926.77,"targetGP":1437193.73,"actualGP":1735253.45,"gpAT":298059.72,"gpPct":0.55},{"month":"2026-07","targetRev":1055012.83,"actualRev":394264.0,"revAT":-660748.83,"targetGP":580257.06,"actualGP":216845.2,"gpAT":-363411.86,"gpPct":0.55},{"month":"2026-08","targetRev":838354.09,"actualRev":553562.05,"revAT":-284792.04,"targetGP":461094.75,"actualGP":304459.13,"gpAT":-156635.62,"gpPct":0.55},{"month":"2026-09","targetRev":1269322.13,"actualRev":899696.18,"revAT":-369625.95,"targetGP":698127.17,"actualGP":494832.9,"gpAT":-203294.27,"gpPct":0.55},{"month":"2026-10","targetRev":1803305.43,"actualRev":889822.14,"revAT":-913483.29,"targetGP":991817.99,"actualGP":489402.18,"gpAT":-502415.81,"gpPct":0.55},{"month":"2026-11","targetRev":1627758.84,"actualRev":387203.0,"revAT":-1240555.84,"targetGP":895267.36,"actualGP":212961.65,"gpAT":-682305.71,"gpPct":0.55},{"month":"2026-12","targetRev":1078033.57,"actualRev":808666.58,"revAT":-269366.99,"targetGP":592918.46,"actualGP":444766.62,"gpAT":-148151.84,"gpPct":0.55}],"gpToOverhead":[{"month":"2026-01","overhead":403743.1,"budgetGP":153189.73,"actualGP":384079.07,"gpPct":0.627958,"actualVsBudget":230889.34,"actualVsOverhead":-19664.03,"pctOverhead":-0.048704},{"month":"2026-02","overhead":456192.25,"budgetGP":681788.41,"actualGP":917302.79,"gpPct":0.585265,"actualVsBudget":235514.38,"actualVsOverhead":461110.54,"pctOverhead":1.010781},{"month":"2026-03","overhead":450029.49,"budgetGP":619678.23,"actualGP":607592.84,"gpPct":0.55,"actualVsBudget":-12085.39,"actualVsOverhead":157563.35,"pctOverhead":0.350118},{"month":"2026-04","overhead":411053.89,"budgetGP":226870.17,"actualGP":241245.89,"gpPct":0.55,"actualVsBudget":14375.72,"actualVsOverhead":-169808.0,"pctOverhead":-0.413104},{"month":"2026-05","overhead":483692.89,"budgetGP":958948.28,"actualGP":1166455.12,"gpPct":0.55,"actualVsBudget":207506.84,"actualVsOverhead":682762.23,"pctOverhead":1.411561},{"month":"2026-06","overhead":444834.8,"budgetGP":1463324.52,"actualGP":1735253.45,"gpPct":0.55,"actualVsBudget":271928.93,"actualVsOverhead":1290418.65,"pctOverhead":2.900894},{"month":"2026-07","overhead":447164.82,"budgetGP":590807.18,"actualGP":216845.2,"gpPct":0.55,"actualVsBudget":-373961.98,"actualVsOverhead":-230319.62,"pctOverhead":-0.515067},{"month":"2026-08","overhead":435126.2,"budgetGP":469478.29,"actualGP":304459.13,"gpPct":0.55,"actualVsBudget":-165019.16,"actualVsOverhead":-130667.07,"pctOverhead":-0.300297},{"month":"2026-09","overhead":547976.71,"budgetGP":710820.39,"actualGP":494832.9,"gpPct":0.55,"actualVsBudget":-215987.49,"actualVsOverhead":-53143.81,"pctOverhead":-0.096982},{"month":"2026-10","overhead":488743.61,"budgetGP":1009851.04,"actualGP":489402.18,"gpPct":0.55,"actualVsBudget":-520448.86,"actualVsOverhead":658.57,"pctOverhead":0.001347},{"month":"2026-11","overhead":478989.38,"budgetGP":911544.95,"actualGP":212961.65,"gpPct":0.55,"actualVsBudget":-698583.3,"actualVsOverhead":-266027.73,"pctOverhead":-0.555394},{"month":"2026-12","overhead":448443.96,"budgetGP":603698.8,"actualGP":444766.62,"gpPct":0.55,"actualVsBudget":-158932.18,"actualVsOverhead":-3677.34,"pctOverhead":-0.0082}],"productionSummary":[{"month":"Jan","revenue":604312.15,"grossProfit":384079.07,"gpMargin":0.627958},{"month":"Feb","revenue":1645800.32,"grossProfit":917302.79,"gpMargin":0.585265},{"month":"Mar","revenue":1104714.25,"grossProfit":607592.84,"gpMargin":0.55},{"month":"Apr","revenue":438628.9,"grossProfit":241245.89,"gpMargin":0.55},{"month":"May","revenue":2120827.49,"grossProfit":1166455.12,"gpMargin":0.510714},{"month":"Jun","revenue":3155006.27,"grossProfit":1735253.45,"gpMargin":0.55},{"month":"Jul","revenue":394264.0,"grossProfit":216845.2,"gpMargin":0.55},{"month":"Aug","revenue":553562.05,"grossProfit":304459.13,"gpMargin":0.4125},{"month":"Sep","revenue":899696.18,"grossProfit":494832.9,"gpMargin":0.55},{"month":"Oct","revenue":889822.14,"grossProfit":489402.18,"gpMargin":0.55},{"month":"Nov","revenue":387203.0,"grossProfit":212961.65,"gpMargin":0.55},{"month":"Dec","revenue":808666.58,"grossProfit":444766.62,"gpMargin":0.44}],"hubspot":[{"recordId":"316632742592","dealName":"All In Summit","projectId":"0926MIN-VIP","dealStage":"Bid Sent","closeDate":"2026-09-13","dealOwner":"Adam Rosen","amount":186295.0,"gp":102462.25,"month":"2026-09","qboAmount":0.0,"qboGP":0.0,"actualRev":186295.0,"actualGP":102462.25,"actualGpPct":0.55},{"recordId":"316634112699","dealName":"President's Reception - Academy Museum","projectId":"0326UOT-ACA","dealStage":"Bid Accepted","closeDate":"2026-03-18","dealOwner":"Michael Madsen","amount":8455.0,"gp":4650.25,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":8455.0,"actualGP":4650.25,"actualGpPct":0.55},{"recordId":"316626976497","dealName":"KCRW Sony Music Event","projectId":"0626LIT-SON","dealStage":"Bid Sent","closeDate":"2026-06-03","dealOwner":"dusty@showpro.net","amount":64485.0,"gp":35466.75,"month":"2026-06","qboAmount":0.0,"qboGP":0.0,"actualRev":64485.0,"actualGP":35466.75,"actualGpPct":0.55},{"recordId":"316626976482","dealName":"Monterey Car Week - The Quail","projectId":"0826ELA-MCW","dealStage":"Bid Sent","closeDate":"2026-08-14","dealOwner":"Michael Madsen","amount":0,"gp":0.0,"month":"2026-08","qboAmount":0.0,"qboGP":0.0,"actualRev":0.0,"actualGP":0.0,"actualGpPct":0.0},{"recordId":"316626255565","dealName":"Open Table Event","projectId":"0426OMA-BUD","dealStage":"Bid Sent","closeDate":"2026-04-23","dealOwner":"Adam Rosen","amount":4500.0,"gp":2475.0,"month":"2026-04","qboAmount":0.0,"qboGP":0.0,"actualRev":4500.0,"actualGP":2475.0,"actualGpPct":0.55},{"recordId":"316625541845","dealName":"Celsius - Rose Bowl","projectId":"0426ROS-CEL","dealStage":"Bid Sent","closeDate":"2026-04-21","dealOwner":"Michael Madsen","amount":211320.0,"gp":116226.0,"month":"2026-04","qboAmount":0.0,"qboGP":0.0,"actualRev":211320.0,"actualGP":116226.0,"actualGpPct":0.55},{"recordId":"316634110713","dealName":"Capital Group Dinner - LA Coliseum","projectId":"1026COH-COL","dealStage":"Bid Sent","closeDate":"2026-10-14","dealOwner":"Michael Madsen","amount":35640.0,"gp":19602.0,"month":"2026-10","qboAmount":0.0,"qboGP":0.0,"actualRev":35640.0,"actualGP":19602.0,"actualGpPct":0.55},{"recordId":"316633454299","dealName":"Santa Monica Pier - Michelob - FIFA World Cup","projectId":"0626MOM-FIF","dealStage":"Bid Sent","closeDate":"2026-06-11","dealOwner":"Michael Madsen","amount":547490.0,"gp":301119.5,"month":"2026-06","qboAmount":0.0,"qboGP":0.0,"actualRev":547490.0,"actualGP":301119.5,"actualGpPct":0.55},{"recordId":"311527246580","dealName":"May 2026 LED Walls","projectId":"0526BUR-LED","dealStage":"Bid Sent","closeDate":"2026-05-13","dealOwner":"Adam Rosen","amount":135815.38,"gp":74698.46,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":135815.38,"actualGP":74698.46,"actualGpPct":0.55},{"recordId":"311636810426","dealName":"Bachelorette House of Roses","projectId":"0326NYA-BAC","dealStage":"Bid Accepted","closeDate":"2026-03-22","dealOwner":"Michael Madsen","amount":4050.0,"gp":2227.5,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":4050.0,"actualGP":2227.5,"actualGpPct":0.55},{"recordId":"311636809407","dealName":"Bureau Batek","projectId":"0526BUR-PRO","dealStage":"Bid Sent","closeDate":"2026-05-13","dealOwner":"Adam Rosen","amount":93950.0,"gp":51672.5,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":93950.0,"actualGP":51672.5,"actualGpPct":0.55},{"recordId":"311636808434","dealName":"BYREDOXSISTER DREAMER PARTY","projectId":"0326K2-BYR","dealStage":"Bid Revision","closeDate":"2026-03-24","dealOwner":"Adam Rosen","amount":70660.0,"gp":38863.0,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":70660.0,"actualGP":38863.0,"actualGpPct":0.55},{"recordId":"305108108021","dealName":"Rose Bowl - Sports Retailer","projectId":"0326ROS-SRD","dealStage":"Bid Sent","closeDate":"2026-03-25","dealOwner":"Michael Madsen","amount":45000.0,"gp":24750.0,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":45000.0,"actualGP":24750.0,"actualGpPct":0.55},{"recordId":"305110984417","dealName":"The BLOC - FIFA Watch Party","projectId":"0726CBR-BLO","dealStage":"Bid Sent","closeDate":"2026-07-09","dealOwner":"Michael Madsen","amount":53000.0,"gp":29150.0,"month":"2026-07","qboAmount":0.0,"qboGP":0.0,"actualRev":53000.0,"actualGP":29150.0,"actualGpPct":0.55},{"recordId":"305110984412","dealName":"SoFi - AirBnB LA Roadshow","projectId":"0326SOF-AIR","dealStage":"Closed Won","closeDate":"2026-03-05","dealOwner":"Michael Madsen","amount":19426.25,"gp":10684.44,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":19426.25,"actualGP":10684.44,"actualGpPct":0.55},{"recordId":"299752522477","dealName":"JWANG One Piece","projectId":"0226JWC-UNI","dealStage":"Closed Won","closeDate":"2026-02-25","dealOwner":"davem@showpro.net","amount":17097.0,"gp":9403.35,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":17097.0,"actualGP":9403.35,"actualGpPct":0.55},{"recordId":"300329557747","dealName":"NBA All Star Tip Off","projectId":"0226NBA-ALL","dealStage":"Closed Won","closeDate":"2026-02-12","dealOwner":"Michael Madsen","amount":4845.0,"gp":2664.75,"month":"2026-02","qboAmount":4732.85,"qboGP":3607.69,"actualRev":4732.85,"actualGP":3607.69,"actualGpPct":0.762266},{"recordId":"301340998368","dealName":"FIFA Watch Party - NYA Studios","projectId":"0726NYA-FIF","dealStage":"Bid Sent","closeDate":"2026-07-10","dealOwner":"Michael Madsen","amount":123780.0,"gp":68079.0,"month":"2026-07","qboAmount":0.0,"qboGP":0.0,"actualRev":123780.0,"actualGP":68079.0,"actualGpPct":0.55},{"recordId":"301256431297","dealName":"CANVA - Sony Studios","projectId":"0426CAN-OFF","dealStage":"Bid Accepted","closeDate":"2026-04-15","dealOwner":"Adam Rosen","amount":34420.0,"gp":18931.0,"month":"2026-04","qboAmount":0.0,"qboGP":0.0,"actualRev":34420.0,"actualGP":18931.0,"actualGpPct":0.55},{"recordId":"301254996675","dealName":"Monarch","projectId":"0226LIT-MON","dealStage":"Closed Won","closeDate":"2026-02-20","dealOwner":"dusty@showpro.net","amount":37868.3,"gp":20827.57,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":37868.3,"actualGP":20827.57,"actualGpPct":0.55},{"recordId":"300024218314","dealName":"NYA ChiefX Conference 2026","projectId":"0526NYA-CHI","dealStage":"Bid Sent","closeDate":"2026-05-05","dealOwner":"Michael Madsen","amount":22400.0,"gp":12320.0,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":22400.0,"actualGP":12320.0,"actualGpPct":0.55},{"recordId":"301340998351","dealName":"Album Cover Release","projectId":"0226ATE-BLT","dealStage":"Closed Won","closeDate":"2026-02-10","dealOwner":"Adam Rosen","amount":7500.0,"gp":4125.0,"month":"2026-02","qboAmount":7500.0,"qboGP":4524.88,"actualRev":7500.0,"actualGP":4524.88,"actualGpPct":0.603317},{"recordId":"285661366991","dealName":"JPIEGO Lighten Up","projectId":"0326LIG-BEV","dealStage":"Bid Sent","closeDate":"2026-03-19","dealOwner":"davem@showpro.net","amount":19582.0,"gp":10770.1,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":19582.0,"actualGP":10770.1,"actualGpPct":0.55},{"recordId":"285661366980","dealName":"JOWY Mighty Untouchables","projectId":"","dealStage":"Bid Sent","closeDate":"2026-06-10","dealOwner":"davem@showpro.net","amount":41851.0,"gp":23018.05,"month":"2026-06","qboAmount":0.0,"qboGP":0.0,"actualRev":41851.0,"actualGP":23018.05,"actualGpPct":0.55},{"recordId":"286852909772","dealName":"Geller Platinum Equity Club Room","projectId":"0226GEL-PLA","dealStage":"Closed Won","closeDate":"2026-02-18","dealOwner":"davem@showpro.net","amount":13204.0,"gp":7262.2,"month":"2026-02","qboAmount":13204.0,"qboGP":7840.14,"actualRev":13204.0,"actualGP":7840.14,"actualGpPct":0.59377},{"recordId":"286852909756","dealName":"Wasserman Gagosian","projectId":"0226WAS-GAG","dealStage":"Closed Won","closeDate":"2026-02-18","dealOwner":"davem@showpro.net","amount":23833.0,"gp":13108.15,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":23833.0,"actualGP":13108.15,"actualGpPct":0.55},{"recordId":"285443063511","dealName":"Simon Birthday","projectId":"0226TOB-LUC","dealStage":"Closed Won","closeDate":"2026-02-24","dealOwner":"davem@showpro.net","amount":6335.0,"gp":3484.25,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":6335.0,"actualGP":3484.25,"actualGpPct":0.55},{"recordId":"285443061462","dealName":"CBP Summit","projectId":"0626NYA-CBP","dealStage":"Bid Sent","closeDate":"2026-06-02","dealOwner":"Michael Madsen","amount":95390.0,"gp":52464.5,"month":"2026-06","qboAmount":0.0,"qboGP":0.0,"actualRev":95390.0,"actualGP":52464.5,"actualGpPct":0.55},{"recordId":"286909414107","dealName":"Chronologiste - NYA","projectId":"0326CHR-LED","dealStage":"Closed Won","closeDate":"2026-03-04","dealOwner":"Michael Madsen","amount":21882.5,"gp":12035.38,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":21882.5,"actualGP":12035.38,"actualGpPct":0.55},{"recordId":"285661356787","dealName":"SOHO House - Stamp","projectId":"0226STA-SOH","dealStage":"Bid Sent","closeDate":"2026-02-11","dealOwner":"Adam Rosen","amount":3225.0,"gp":1773.75,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":3225.0,"actualGP":1773.75,"actualGpPct":0.55},{"recordId":"286852899525","dealName":"NBA Phoenix Suns All Star Weekend - SoFi Stadium","projectId":"0226SOF-NBA","dealStage":"Closed Won","closeDate":"2026-02-18","dealOwner":"Michael Madsen","amount":70711.0,"gp":38891.05,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":70711.0,"actualGP":38891.05,"actualGpPct":0.55},{"recordId":"286910116559","dealName":"NBA Impact Supplier Event - SoFi","projectId":"0226SOF-IMP","dealStage":"Closed Won","closeDate":"2026-02-18","dealOwner":"Michael Madsen","amount":16556.0,"gp":9105.8,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":16556.0,"actualGP":9105.8,"actualGpPct":0.55},{"recordId":"300024219366","dealName":"NIKE Foot Locker","projectId":"0226KEA-NIK","dealStage":"Closed Won","closeDate":"2026-02-11","dealOwner":"Adam Rosen","amount":13100.0,"gp":7205.0,"month":"2026-02","qboAmount":13100.0,"qboGP":8602.9,"actualRev":13100.0,"actualGP":8602.9,"actualGpPct":0.65671},{"recordId":"299409954516","dealName":"Mayoral Candidate Announcement","projectId":"0226PLA-MAY","dealStage":"Closed Won","closeDate":"2026-02-05","dealOwner":"Adam Rosen","amount":3000.0,"gp":1650.0,"month":"2026-02","qboAmount":3000.0,"qboGP":2474.97,"actualRev":3000.0,"actualGP":2474.97,"actualGpPct":0.82499},{"recordId":"276777156286","dealName":"E11 Redondo Beach","projectId":"0326E11-SHA","dealStage":"Bid Accepted","closeDate":"2026-03-11","dealOwner":"davem@showpro.net","amount":6979.0,"gp":3838.45,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":6979.0,"actualGP":3838.45,"actualGpPct":0.55},{"recordId":"276777156283","dealName":"Sterling Social WOTY","projectId":"0326STE-EDI","dealStage":"Bid Accepted","closeDate":"2026-03-08","dealOwner":"davem@showpro.net","amount":82054.0,"gp":45129.7,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":82054.0,"actualGP":45129.7,"actualGpPct":0.55},{"recordId":"276777155319","dealName":"SAG Awards 2026 - Dave Meek","projectId":"0326E11-SAG","dealStage":"Closed Won","closeDate":"2026-02-26","dealOwner":"davem@showpro.net","amount":14916.0,"gp":8203.8,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":14916.0,"actualGP":8203.8,"actualGpPct":0.55},{"recordId":"276778596032","dealName":"Live Nation Superbowl","projectId":"0226LIV-PAL","dealStage":"Closed Won","closeDate":"2026-02-24","dealOwner":"davem@showpro.net","amount":78013.0,"gp":42907.15,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":78013.0,"actualGP":42907.15,"actualGpPct":0.55},{"recordId":"276778595061","dealName":"Jwang Greystone Mansion","projectId":"0126JWC-GRE","dealStage":"Closed Won","closeDate":"2026-01-24","dealOwner":"davem@showpro.net","amount":19572.0,"gp":10764.6,"month":"2026-01","qboAmount":0.0,"qboGP":0.0,"actualRev":19572.0,"actualGP":10764.6,"actualGpPct":0.55},{"recordId":"276778595051","dealName":"JWang Dante","projectId":"0126JWC-DAN","dealStage":"Closed Won","closeDate":"2026-01-11","dealOwner":"davem@showpro.net","amount":23671.0,"gp":13019.05,"month":"2026-01","qboAmount":0.0,"qboGP":0.0,"actualRev":23671.0,"actualGP":13019.05,"actualGpPct":0.55},{"recordId":"276776435414","dealName":"Alyson Fox - Bat Mitzvah","projectId":"0126AFE-SKI","dealStage":"Closed Won","closeDate":"2026-01-10","dealOwner":"davem@showpro.net","amount":14355.0,"gp":7895.25,"month":"2026-01","qboAmount":0.0,"qboGP":0.0,"actualRev":14355.0,"actualGP":7895.25,"actualGpPct":0.55},{"recordId":"276772392673","dealName":"Dodgers Holiday 2026","projectId":"1226LAD-HOL","dealStage":"Bid Sent","closeDate":"2026-12-04","dealOwner":"Michael Madsen","amount":0,"gp":0.0,"month":"2026-12","qboAmount":0.0,"qboGP":0.0,"actualRev":0.0,"actualGP":0.0,"actualGpPct":0.0},{"recordId":"276777875162","dealName":"Grammy Nominee Reception - 160over90","projectId":"0226NAR-NOM","dealStage":"Closed Won","closeDate":"2026-01-31","dealOwner":"Adam Rosen","amount":32376.4,"gp":17807.02,"month":"2026-01","qboAmount":0.0,"qboGP":0.0,"actualRev":32376.4,"actualGP":17807.02,"actualGpPct":0.55},{"recordId":"276773832381","dealName":"Simpsons 800th Episode Premiere","projectId":"0226LIT-SIM","dealStage":"Closed Won","closeDate":"2026-02-18","dealOwner":"dusty@showpro.net","amount":49179.0,"gp":27048.45,"month":"2026-02","qboAmount":49179.18,"qboGP":33005.34,"actualRev":49179.18,"actualGP":33005.34,"actualGpPct":0.671124},{"recordId":"276777874130","dealName":"W Magazine Grammys","projectId":"0226K2-GRA","dealStage":"Closed Won","closeDate":"2026-01-31","dealOwner":"","amount":21050.0,"gp":11577.5,"month":"2026-01","qboAmount":20862.0,"qboGP":10239.82,"actualRev":20862.0,"actualGP":10239.82,"actualGpPct":0.490836},{"recordId":"267448740540","dealName":"Walmart Saturday Showdown","projectId":"0226NYA-WAL","dealStage":"Closed Won","closeDate":"2026-02-18","dealOwner":"Michael Madsen","amount":104797.5,"gp":57638.63,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":104797.5,"actualGP":57638.63,"actualGpPct":0.55},{"recordId":"267668240114","dealName":"Muppets Premiere","projectId":"0126LIT-MUP","dealStage":"Closed Won","closeDate":"2026-01-30","dealOwner":"dusty@showpro.net","amount":86655.0,"gp":47660.25,"month":"2026-01","qboAmount":86655.0,"qboGP":60087.83,"actualRev":86655.0,"actualGP":60087.83,"actualGpPct":0.693414},{"recordId":"269707152085","dealName":"GQ THOM BROWN - Superbowl 2026","projectId":"0226DAV-THO","dealStage":"Closed Won","closeDate":"2026-02-03","dealOwner":"Adam Rosen","amount":267811.74,"gp":147296.46,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":267811.74,"actualGP":147296.46,"actualGpPct":0.55},{"recordId":"269635982031","dealName":"Robert Shrum Gala - USC","projectId":"0326USC-RSG","dealStage":"Bid Sent","closeDate":"2026-03-05","dealOwner":"Michael Madsen","amount":80235.0,"gp":44129.25,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":80235.0,"actualGP":44129.25,"actualGpPct":0.55},{"recordId":"269507495668","dealName":"CELINE","projectId":"0226BRO-CEL","dealStage":"Closed Won","closeDate":"2026-02-09","dealOwner":"Adam Rosen","amount":13935.0,"gp":7664.25,"month":"2026-02","qboAmount":13935.0,"qboGP":9614.76,"actualRev":13935.0,"actualGP":9614.76,"actualGpPct":0.689972},{"recordId":"262356231897","dealName":"Trojan Invitational 2026","projectId":"0326USC-INV","dealStage":"Bid Revision","closeDate":"2026-03-27","dealOwner":"Adam Rosen","amount":10675.0,"gp":5871.25,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":10675.0,"actualGP":5871.25,"actualGpPct":0.55},{"recordId":"262437316307","dealName":"USC - UCLA Dual Meet","projectId":"0526USC-DUA","dealStage":"Bid Sent","closeDate":"2026-05-02","dealOwner":"Adam Rosen","amount":10675.0,"gp":5871.25,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":10675.0,"actualGP":5871.25,"actualGpPct":0.55},{"recordId":"262368105202","dealName":"USC - USATF Meet","projectId":"0626USC-USA","dealStage":"Bid Sent","closeDate":"2026-06-13","dealOwner":"Adam Rosen","amount":11625.0,"gp":6393.75,"month":"2026-06","qboAmount":0.0,"qboGP":0.0,"actualRev":11625.0,"actualGP":6393.75,"actualGpPct":0.55},{"recordId":"256654641851","dealName":"PTTOW Summit 2026","projectId":"0526PTT-SUM","dealStage":"Bid Revision","closeDate":"2026-05-27","dealOwner":"Adam Rosen","amount":283979.86,"gp":156188.92,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":283979.86,"actualGP":156188.92,"actualGpPct":0.55},{"recordId":"256653920979","dealName":"NAACP Images Awards","projectId":"0226NYA-NAA","dealStage":"Closed Won","closeDate":"2026-02-18","dealOwner":"Michael Madsen","amount":45955.0,"gp":25275.25,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":45955.0,"actualGP":25275.25,"actualGpPct":0.55},{"recordId":"253057048273","dealName":"SoFi Stadium - TSG","projectId":"0126SOF-TSG","dealStage":"Closed Won","closeDate":"2026-01-14","dealOwner":"Michael Madsen","amount":16780.0,"gp":9229.0,"month":"2026-01","qboAmount":14895.0,"qboGP":10801.93,"actualRev":14895.0,"actualGP":10801.93,"actualGpPct":0.725205},{"recordId":"251915183815","dealName":"W Magazine - Penthouse 64","projectId":"0126DAV-PEN","dealStage":"Closed Won","closeDate":"2026-01-09","dealOwner":"Adam Rosen","amount":20940.0,"gp":11517.0,"month":"2026-01","qboAmount":20970.0,"qboGP":14863.68,"actualRev":20970.0,"actualGP":14863.68,"actualGpPct":0.708807},{"recordId":"246103584453","dealName":"Paramour NOMA","projectId":"0126MAT-PAR","dealStage":"Closed Won","closeDate":"2026-01-18","dealOwner":"Adam Rosen","amount":35940.0,"gp":19767.0,"month":"2026-01","qboAmount":0.0,"qboGP":0.0,"actualRev":35940.0,"actualGP":19767.0,"actualGpPct":0.55},{"recordId":"247210026723","dealName":"G7 Entertainment Marketing","projectId":"0526NYA-G7E","dealStage":"Bid Sent","closeDate":"2026-05-29","dealOwner":"Adam Rosen","amount":62642.0,"gp":34453.1,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":62642.0,"actualGP":34453.1,"actualGpPct":0.55},{"recordId":"249868347079","dealName":"Oscars Viewing Party 2026 - NYA","projectId":"0326NYA-OSC","dealStage":"Bid Sent","closeDate":"2026-03-15","dealOwner":"Michael Madsen","amount":18700.0,"gp":10285.0,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":18700.0,"actualGP":10285.0,"actualGpPct":0.55},{"recordId":"249867627200","dealName":"CES 2026 - Matt Ringer","projectId":"0126MAT-CES","dealStage":"Closed Won","closeDate":"2026-01-13","dealOwner":"Adam Rosen","amount":34858.75,"gp":19172.31,"month":"2026-01","qboAmount":34858.75,"qboGP":24309.68,"actualRev":34858.75,"actualGP":24309.68,"actualGpPct":0.697377},{"recordId":"239542509244","dealName":"Camp Rock","projectId":"0826LIT-CAM","dealStage":"Bid Sent","closeDate":"2026-08-12","dealOwner":"dusty@showpro.net","amount":93305.0,"gp":51317.75,"month":"2026-08","qboAmount":0.0,"qboGP":0.0,"actualRev":93305.0,"actualGP":51317.75,"actualGpPct":0.55},{"recordId":"237441345233","dealName":"W Mag - LV Event","projectId":"0126K2-LVE","dealStage":"Closed Won","closeDate":"2026-01-07","dealOwner":"Adam Rosen","amount":28107.0,"gp":15458.85,"month":"2026-01","qboAmount":28107.0,"qboGP":22361.79,"actualRev":28107.0,"actualGP":22361.79,"actualGpPct":0.795595},{"recordId":"235322576613","dealName":"Westfield Holiday UTC 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-12-30","dealOwner":"nate@showpro.net","amount":115000.0,"gp":63250.0,"month":"2026-12","qboAmount":0.0,"qboGP":0.0,"actualRev":115000.0,"actualGP":63250.0,"actualGpPct":0.55},{"recordId":"235886591686","dealName":"Westfield Holiday CC 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-12-30","dealOwner":"David Olson (Deactivated User)","amount":145000.0,"gp":79750.0,"month":"2026-12","qboAmount":0.0,"qboGP":0.0,"actualRev":145000.0,"actualGP":79750.0,"actualGpPct":0.55},{"recordId":"235608127169","dealName":"Bevnet 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-12-04","dealOwner":"Adam Rosen","amount":129648.55,"gp":71306.7,"month":"2026-12","qboAmount":0.0,"qboGP":0.0,"actualRev":129648.55,"actualGP":71306.7,"actualGpPct":0.55},{"recordId":"236393437908","dealName":"NFR 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-12-04","dealOwner":"Adam Rosen","amount":419018.03,"gp":230459.92,"month":"2026-12","qboAmount":0.0,"qboGP":0.0,"actualRev":419018.03,"actualGP":230459.92,"actualGpPct":0.55},{"recordId":"235964591849","dealName":"GQ MOTY 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-11-24","dealOwner":"Adam Rosen","amount":72451.0,"gp":39848.05,"month":"2026-11","qboAmount":0.0,"qboGP":0.0,"actualRev":72451.0,"actualGP":39848.05,"actualGpPct":0.55},{"recordId":"235322576605","dealName":"Fall Trustee Meeting - NARAS 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-11-17","dealOwner":"Adam Rosen","amount":31020.0,"gp":17061.0,"month":"2026-11","qboAmount":0.0,"qboGP":0.0,"actualRev":31020.0,"actualGP":17061.0,"actualGpPct":0.55},{"recordId":"236392718033","dealName":"Holiday Road 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-11-15","dealOwner":"davem@showpro.net","amount":283732.0,"gp":156052.6,"month":"2026-11","qboAmount":0.0,"qboGP":0.0,"actualRev":283732.0,"actualGP":156052.6,"actualGpPct":0.55},{"recordId":"235886591678","dealName":"Violet Visionary Awards 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-10-16","dealOwner":"Michael Madsen","amount":38320.44,"gp":21076.24,"month":"2026-10","qboAmount":0.0,"qboGP":0.0,"actualRev":38320.44,"actualGP":21076.24,"actualGpPct":0.55},{"recordId":"235966028530","dealName":"LA Phil 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-10-14","dealOwner":"Adam Rosen","amount":90843.0,"gp":49963.65,"month":"2026-10","qboAmount":0.0,"qboGP":0.0,"actualRev":90843.0,"actualGP":49963.65,"actualGpPct":0.55},{"recordId":"235322576600","dealName":"Shine Away 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-10-11","dealOwner":"dusty@showpro.net","amount":331670.0,"gp":182418.5,"month":"2026-10","qboAmount":0.0,"qboGP":0.0,"actualRev":331670.0,"actualGP":182418.5,"actualGpPct":0.55},{"recordId":"236392718028","dealName":"PuffCon 2026","projectId":"1026PUF-CON","dealStage":"Pre-Qualified Event","closeDate":"2026-10-04","dealOwner":"Adam Rosen","amount":393348.7,"gp":216341.79,"month":"2026-10","qboAmount":0.0,"qboGP":0.0,"actualRev":393348.7,"actualGP":216341.79,"actualGpPct":0.55},{"recordId":"235886590713","dealName":"NOTJ - Night of the Jack 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-09-27","dealOwner":"davem@showpro.net","amount":307192.9,"gp":168956.1,"month":"2026-09","qboAmount":0.0,"qboGP":0.0,"actualRev":307192.9,"actualGP":168956.1,"actualGpPct":0.55},{"recordId":"236125613798","dealName":"Emmys Governors Ball 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-09-06","dealOwner":"Adam Rosen","amount":312174.28,"gp":171695.85,"month":"2026-09","qboAmount":0.0,"qboGP":0.0,"actualRev":312174.28,"actualGP":171695.85,"actualGpPct":0.55},{"recordId":"235886590712","dealName":"Riot Games - VCT 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-08-30","dealOwner":"Michael Madsen","amount":242637.05,"gp":133450.38,"month":"2026-08","qboAmount":0.0,"qboGP":0.0,"actualRev":242637.05,"actualGP":133450.38,"actualGpPct":0.55},{"recordId":"235886590711","dealName":"Televerse - ATAS 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-08-14","dealOwner":"Adam Rosen","amount":217620.0,"gp":119691.0,"month":"2026-08","qboAmount":0.0,"qboGP":0.0,"actualRev":217620.0,"actualGP":119691.0,"actualGpPct":0.55},{"recordId":"236125613791","dealName":"nTop Hudson Loft - 2026","projectId":"","dealStage":"Bid Accepted","closeDate":"2026-04-20","dealOwner":"Michael Madsen","amount":69097.0,"gp":38003.35,"month":"2026-04","qboAmount":0.0,"qboGP":0.0,"actualRev":69097.0,"actualGP":38003.35,"actualGpPct":0.55},{"recordId":"235608126189","dealName":"Telacu 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-06-13","dealOwner":"Adam Rosen","amount":109575.0,"gp":60266.25,"month":"2026-06","qboAmount":0.0,"qboGP":0.0,"actualRev":109575.0,"actualGP":60266.25,"actualGpPct":0.55},{"recordId":"236391998163","dealName":"NCAA World Series 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-06-12","dealOwner":"Adam Rosen","amount":20266.77,"gp":11146.72,"month":"2026-06","qboAmount":0.0,"qboGP":0.0,"actualRev":20266.77,"actualGP":11146.72,"actualGpPct":0.55},{"recordId":"236125613786","dealName":"ROSE DAY 2026","projectId":"","dealStage":"Bid Requested","closeDate":"2026-06-09","dealOwner":"davem@showpro.net","amount":59085.5,"gp":32497.03,"month":"2026-06","qboAmount":0.0,"qboGP":0.0,"actualRev":59085.5,"actualGP":32497.03,"actualGpPct":0.55},{"recordId":"235966028512","dealName":"Producers Guild Conference 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-05-31","dealOwner":"Adam Rosen","amount":40827.5,"gp":22455.12,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":40827.5,"actualGP":22455.12,"actualGpPct":0.55},{"recordId":"236125613783","dealName":"MOCA Gala 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-05-31","dealOwner":"Adam Rosen","amount":51155.0,"gp":28135.25,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":51155.0,"actualGP":28135.25,"actualGpPct":0.55},{"recordId":"235886590693","dealName":"NARAS Spring Trustees 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-05-20","dealOwner":"Adam Rosen","amount":43459.5,"gp":23902.73,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":43459.5,"actualGP":23902.73,"actualGpPct":0.55},{"recordId":"236327494356","dealName":"Paramount Licensing 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-05-20","dealOwner":"Adam Rosen","amount":178941.75,"gp":98417.96,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":178941.75,"actualGP":98417.96,"actualGpPct":0.55},{"recordId":"236391998153","dealName":"Gold Gala 2026","projectId":"0526SEQ-GOL","dealStage":"Bid Revision","closeDate":"2026-05-06","dealOwner":"Adam Rosen","amount":187731.5,"gp":103252.33,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":187731.5,"actualGP":103252.33,"actualGpPct":0.55},{"recordId":"236327494348","dealName":"LACHSA Gala 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-04-26","dealOwner":"Adam Rosen","amount":19998.0,"gp":10998.9,"month":"2026-04","qboAmount":0.0,"qboGP":0.0,"actualRev":19998.0,"actualGP":10998.9,"actualGpPct":0.55},{"recordId":"236391998140","dealName":"Oscars VF 2026","projectId":"","dealStage":"Closed Won","closeDate":"2026-03-15","dealOwner":"Adam Rosen","amount":11315.0,"gp":6223.25,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":11315.0,"actualGP":6223.25,"actualGpPct":0.55},{"recordId":"235322574577","dealName":"USC Commencement 2026","projectId":"0526USC-PRO","dealStage":"Bid Revision","closeDate":"2026-05-11","dealOwner":"Adam Rosen","amount":859250.0,"gp":472587.5,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":859250.0,"actualGP":472587.5,"actualGpPct":0.55},{"recordId":"235886589649","dealName":"Mendy H Band","projectId":"0126MER-MEN","dealStage":"Bid Sent","closeDate":"2026-01-17","dealOwner":"Adam Rosen","amount":45905.0,"gp":25247.75,"month":"2026-01","qboAmount":0.0,"qboGP":0.0,"actualRev":45905.0,"actualGP":25247.75,"actualGpPct":0.55},{"recordId":"235966026476","dealName":"SOVAS Voice Over Awards","projectId":"0126SOV-VOI","dealStage":"Bid Revision","closeDate":"2026-01-18","dealOwner":"Adam Rosen","amount":74650.0,"gp":41057.5,"month":"2026-01","qboAmount":59670.0,"qboGP":41992.26,"actualRev":59670.0,"actualGP":41992.26,"actualGpPct":0.703742},{"recordId":"235886589636","dealName":"Spotify BNA","projectId":"0126BUR-SPO","dealStage":"Closed Won","closeDate":"2026-01-27","dealOwner":"Adam Rosen","amount":85500.0,"gp":47025.0,"month":"2026-01","qboAmount":86350.0,"qboGP":56663.8,"actualRev":86350.0,"actualGP":56663.8,"actualGpPct":0.656211},{"recordId":"232533354196","dealName":"Oscars Governors Ball 2026","projectId":"OSCARS 2026","dealStage":"Closed Won","closeDate":"2026-03-18","dealOwner":"Adam Rosen","amount":256462.5,"gp":141054.38,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":256462.5,"actualGP":141054.38,"actualGpPct":0.55},{"recordId":"232555885259","dealName":"Oscars VF 2026","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-02-26","dealOwner":"Adam Rosen","amount":11640.0,"gp":6402.0,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":11640.0,"actualGP":6402.0,"actualGpPct":0.55},{"recordId":"232534075078","dealName":"Upfront Summit 2026","projectId":"0226RGL-UPF","dealStage":"Closed Won","closeDate":"2026-02-23","dealOwner":"Adam Rosen","amount":274248.25,"gp":150836.54,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":274248.25,"actualGP":150836.54,"actualGpPct":0.55},{"recordId":"232531914442","dealName":"ADG Awards 2026","projectId":"0226ADG-AWA","dealStage":"Closed Won","closeDate":"2026-02-27","dealOwner":"Adam Rosen","amount":53453.0,"gp":29399.15,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":53453.0,"actualGP":29399.15,"actualGpPct":0.55},{"recordId":"269389068019","dealName":"Grammy Nominee Reception 2026","projectId":"0126NAR-NOM","dealStage":"Closed Won","closeDate":"2026-01-31","dealOwner":"Adam Rosen","amount":16485.0,"gp":9066.75,"month":"2026-01","qboAmount":16485.0,"qboGP":13255.61,"actualRev":16485.0,"actualGP":13255.61,"actualGpPct":0.804101},{"recordId":"232555884253","dealName":"PTTOW Entertainment","projectId":"0226PTT-ENT","dealStage":"Closed Won","closeDate":"2026-02-24","dealOwner":"Adam Rosen","amount":94643.0,"gp":52053.65,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":94643.0,"actualGP":52053.65,"actualGpPct":0.55},{"recordId":"232557324015","dealName":"Netflix Summer Break 2026","projectId":"0726GSP-NSB","dealStage":"Bid Revision","closeDate":"2026-07-15","dealOwner":"Michael Madsen","amount":217484.0,"gp":119616.2,"month":"2026-07","qboAmount":0.0,"qboGP":0.0,"actualRev":217484.0,"actualGP":119616.2,"actualGpPct":0.55},{"recordId":"232555884235","dealName":"Canva Event 2026 - SoFi","projectId":"0426PUB-CAN","dealStage":"Bid Accepted","closeDate":"2026-04-15","dealOwner":"Michael Madsen","amount":32376.4,"gp":17807.02,"month":"2026-04","qboAmount":0.0,"qboGP":0.0,"actualRev":32376.4,"actualGP":17807.02,"actualGpPct":0.55},{"recordId":"232532634328","dealName":"MAC Cosmetics Masterclass","projectId":"0226VCF-MAC","dealStage":"Closed Won","closeDate":"2026-02-18","dealOwner":"Adam Rosen","amount":12702.5,"gp":6986.38,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":12702.5,"actualGP":6986.38,"actualGpPct":0.55},{"recordId":"235608125162","dealName":"AAA G'Day Arts Gala 2026","projectId":"0226SEQ-GDA","dealStage":"Closed Won","closeDate":"2026-02-25","dealOwner":"Adam Rosen","amount":178055.0,"gp":97930.25,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":178055.0,"actualGP":97930.25,"actualGpPct":0.55},{"recordId":"232533352168","dealName":"Goldman Sachs Technology Forum","projectId":"0425SEQ-GST","dealStage":"Bid Revision","closeDate":"2026-04-20","dealOwner":"Adam Rosen","amount":14332.5,"gp":7882.88,"month":"2026-04","qboAmount":0.0,"qboGP":0.0,"actualRev":14332.5,"actualGP":7882.88,"actualGpPct":0.55},{"recordId":"222282790612","dealName":"Chandler 75th Anniversary Gala","projectId":"","dealStage":"Bid Sent","closeDate":"2026-04-18","dealOwner":"Charlie Smith (Deactivated User)","amount":52585.0,"gp":28921.75,"month":"2026-04","qboAmount":0.0,"qboGP":0.0,"actualRev":52585.0,"actualGP":28921.75,"actualGpPct":0.55},{"recordId":"222275102403","dealName":"15 Percent Gala - 2026","projectId":"0226GAT-FIF","dealStage":"Closed Won","closeDate":"2026-02-05","dealOwner":"Adam Rosen","amount":175509.0,"gp":96529.95,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":175509.0,"actualGP":96529.95,"actualGpPct":0.55},{"recordId":"212005503723","dealName":"Near Future Summit","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-05-05","dealOwner":"davem@showpro.net","amount":150000.0,"gp":82500.0,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":150000.0,"actualGP":82500.0,"actualGpPct":0.55},{"recordId":"212007539435","dealName":"GLAAD 2026","projectId":"0326GER-GLA","dealStage":"Closed Won","closeDate":"2026-03-18","dealOwner":"Adam Rosen","amount":449238.0,"gp":247080.9,"month":"2026-03","qboAmount":0.0,"qboGP":0.0,"actualRev":449238.0,"actualGP":247080.9,"actualGpPct":0.55},{"recordId":"209642687201","dealName":"Upfront Ventures - Day 0","projectId":"0226UPF-DAY","dealStage":"Closed Won","closeDate":"2026-02-23","dealOwner":"Adam Rosen","amount":53780.0,"gp":29579.0,"month":"2026-02","qboAmount":0.0,"qboGP":0.0,"actualRev":53780.0,"actualGP":29579.0,"actualGpPct":0.55},{"recordId":"204724010738","dealName":"Pop Up LA","projectId":"1025CAR-POP","dealStage":"Bid Sent","closeDate":"2026-01-16","dealOwner":"Adam Rosen","amount":50550.0,"gp":27802.5,"month":"2026-01","qboAmount":0.0,"qboGP":0.0,"actualRev":50550.0,"actualGP":27802.5,"actualGpPct":0.55},{"recordId":"46700843893","dealName":"Capital Group Cohera Event","projectId":"","dealStage":"Bid Sent","closeDate":"2026-09-01","dealOwner":"Michael Madsen","amount":94034.0,"gp":51718.7,"month":"2026-09","qboAmount":0.0,"qboGP":0.0,"actualRev":94034.0,"actualGP":51718.7,"actualGpPct":0.55},{"recordId":"45429644700","dealName":"Wildlight Entertainment","projectId":"0126SGW-WIL","dealStage":"Bid Sent","closeDate":"2026-01-19","dealOwner":"Adam Rosen","amount":13090.0,"gp":7199.5,"month":"2026-01","qboAmount":0.0,"qboGP":0.0,"actualRev":13090.0,"actualGP":7199.5,"actualGpPct":0.55},{"recordId":"43663061175","dealName":"LMU Commencement","projectId":"","dealStage":"Pre-Qualified Event","closeDate":"2026-05-15","dealOwner":"Charlie Smith (Deactivated User)","amount":0,"gp":0.0,"month":"2026-05","qboAmount":0.0,"qboGP":0.0,"actualRev":0.0,"actualGP":0.0,"actualGpPct":0.0},{"recordId":"40832597583","dealName":"Fan Fest - FIFA - Sequoia","projectId":"0624SEQ-FIF","dealStage":"Bid Revision","closeDate":"2026-06-10","dealOwner":"Adam Rosen","amount":2205238.0,"gp":1212880.9,"month":"2026-06","qboAmount":0.0,"qboGP":0.0,"actualRev":2205238.0,"actualGP":1212880.9,"actualGpPct":0.55}],"qbo":[{"project":"01 January 2026 TPM","customer":"WESTFIELD","income":41446.81,"cost":0.0,"profitMargin":1.0,"endDate":"01/31/2026","gp":41446.81,"gpPct":1.0,"month":"2026-01"},{"project":"0126AFE-SKI (DM)","customer":"Alyson Fox Events","income":14355.0,"cost":4697.26,"profitMargin":0.673,"endDate":"01/31/2026","gp":9657.74,"gpPct":0.672779,"month":"2026-01"},{"project":"0126BUR-SPO","customer":"Bureau Batek","income":86350.0,"cost":29686.2,"profitMargin":0.656,"endDate":"01/31/2026","gp":56663.8,"gpPct":0.656211,"month":"2026-01"},{"project":"0126DAV-PEN","customer":"David Rodgers Inc","income":20970.0,"cost":6106.32,"profitMargin":0.709,"endDate":"01/31/2026","gp":14863.68,"gpPct":0.708807,"month":"2026-01"},{"project":"0126E11-MAL (DM)","customer":"Event Eleven","income":21426.0,"cost":6591.29,"profitMargin":0.692,"endDate":"01/31/2026","gp":14834.71,"gpPct":0.69237,"month":"2026-01"},{"project":"0126GOB-REL","customer":"Universal Studios Gobos","income":776.42,"cost":589.73,"profitMargin":0.24,"endDate":"01/31/2026","gp":186.69,"gpPct":0.24045,"month":"2026-01"},{"project":"0126GOB-URB","customer":"Universal Studios Gobos","income":190.19,"cost":128.52,"profitMargin":0.324,"endDate":"01/31/2026","gp":61.67,"gpPct":0.324255,"month":"2026-01"},{"project":"0126HUD-ABB","customer":"Hudson Gray","income":2300.0,"cost":17.0,"profitMargin":0.993,"endDate":"01/31/2026","gp":2283.0,"gpPct":0.992609,"month":"2026-01"},{"project":"0126JWC-DAN (DM)","customer":"Jwang Consulting","income":23671.0,"cost":10100.11,"profitMargin":0.573,"endDate":"01/31/2026","gp":13570.89,"gpPct":0.573313,"month":"2026-01"},{"project":"0126JWC-GRE (DM)","customer":"Jwang Consulting","income":19572.0,"cost":4755.67,"profitMargin":0.757,"endDate":"01/31/2026","gp":14816.33,"gpPct":0.757017,"month":"2026-01"},{"project":"0126K2-LVE","customer":"K2 Americas LLC","income":28107.0,"cost":5745.21,"profitMargin":0.796,"endDate":"01/31/2026","gp":22361.79,"gpPct":0.795595,"month":"2026-01"},{"project":"0126LIT-MUP","customer":"Little Cinema","income":86655.0,"cost":26567.17,"profitMargin":0.693,"endDate":"01/31/2026","gp":60087.83,"gpPct":0.693414,"month":"2026-01"},{"project":"0126LMS-GOB","customer":"Lizarraga Media Services","income":258.14,"cost":157.46,"profitMargin":0.39,"endDate":"01/31/2026","gp":100.68,"gpPct":0.390021,"month":"2026-01"},{"project":"0126MAT-CES","customer":"Seen Live LTD, Zetland House","income":34858.75,"cost":10549.07,"profitMargin":0.697,"endDate":"01/31/2026","gp":24309.68,"gpPct":0.697377,"month":"2026-01"},{"project":"0126MAT-GOB","customer":"Match Group","income":482.4,"cost":293.59,"profitMargin":0.391,"endDate":"01/31/2026","gp":188.81,"gpPct":0.391397,"month":"2026-01"},{"project":"0126MT-L17 GOT","customer":"WESTFIELD EVENTS","income":9230.0,"cost":2750.22,"profitMargin":0.702,"endDate":"01/31/2026","gp":6479.78,"gpPct":0.702035,"month":"2026-01"},{"project":"0126NAR-NOM","customer":"NARAS","income":16485.0,"cost":3229.39,"profitMargin":0.804,"endDate":"01/31/2026","gp":13255.61,"gpPct":0.804101,"month":"2026-01"},{"project":"0126OVE-GRA","customer":"160over90","income":5524.9,"cost":0.0,"profitMargin":1.0,"endDate":"01/31/2026","gp":5524.9,"gpPct":1.0,"month":"2026-01"},{"project":"0126SOF-TSG","customer":"SoFi Stadium","income":14895.0,"cost":4093.07,"profitMargin":0.725,"endDate":"01/31/2026","gp":10801.93,"gpPct":0.725205,"month":"2026-01"},{"project":"0126SOV-VOI","customer":"Rudy Gaskins","income":59670.0,"cost":17677.74,"profitMargin":0.704,"endDate":"01/31/2026","gp":41992.26,"gpPct":0.703742,"month":"2026-01"},{"project":"0126WA-L15 FX Beauty Brand","customer":"WESTFIELD EVENTS","income":13696.0,"cost":6250.76,"profitMargin":0.544,"endDate":"01/31/2026","gp":7445.24,"gpPct":0.543607,"month":"2026-01"},{"project":"0126WA-L18 Screen Build Hedges","customer":"WESTFIELD EVENTS","income":4555.0,"cost":1050.17,"profitMargin":0.769,"endDate":"01/31/2026","gp":3504.83,"gpPct":0.769447,"month":"2026-01"},{"project":"0126WT-L06 Telaflora","customer":"WESTFIELD EVENTS","income":2989.0,"cost":1399.86,"profitMargin":0.532,"endDate":"01/31/2026","gp":1589.14,"gpPct":0.531663,"month":"2026-01"},{"project":"02 February 2026 TPM","customer":"WESTFIELD","income":41446.81,"cost":0.0,"profitMargin":1.0,"endDate":"02/28/2026","gp":41446.81,"gpPct":1.0,"month":"2026-02"},{"project":"0226ATE-BLT","customer":"A-Team Events, LLC","income":7500.0,"cost":2975.12,"profitMargin":0.603,"endDate":"02/28/2026","gp":4524.88,"gpPct":0.603317,"month":"2026-02"},{"project":"0226BRO-CEL","customer":"Brodey Francis, Inc.","income":13935.0,"cost":4320.24,"profitMargin":0.69,"endDate":"02/28/2026","gp":9614.76,"gpPct":0.689972,"month":"2026-02"},{"project":"0226DEL-REN","customer":"Delicate Productions","income":473.8,"cost":0.0,"profitMargin":1.0,"endDate":"02/28/2026","gp":473.8,"gpPct":1.0,"month":"2026-02"},{"project":"0226GEL-PLA","customer":"Geller Events","income":13204.0,"cost":5363.86,"profitMargin":0.594,"endDate":"02/28/2026","gp":7840.14,"gpPct":0.59377,"month":"2026-02"},{"project":"0226GOB-QUE","customer":"Universal Studios Gobos","income":127.39,"cost":82.83,"profitMargin":0.35,"endDate":"02/28/2026","gp":44.56,"gpPct":0.349792,"month":"2026-02"},{"project":"0226JWC-UNI (DM)","customer":"Jwang Consulting","income":17587.0,"cost":6058.43,"profitMargin":0.656,"endDate":"02/28/2026","gp":11528.57,"gpPct":0.655517,"month":"2026-02"},{"project":"0226K2-GRA","customer":"K2 Americas LLC","income":20862.0,"cost":10622.18,"profitMargin":0.491,"endDate":"02/28/2026","gp":10239.82,"gpPct":0.490836,"month":"2026-02"},{"project":"0226KEA-NIK","customer":"Keane Productions, LLC","income":13100.0,"cost":4497.1,"profitMargin":0.657,"endDate":"02/28/2026","gp":8602.9,"gpPct":0.65671,"month":"2026-02"},{"project":"0226LIT-SIM","customer":"Little Cinema","income":49179.18,"cost":16173.84,"profitMargin":0.671,"endDate":"02/28/2026","gp":33005.34,"gpPct":0.671124,"month":"2026-02"},{"project":"0226NBA-ALL","customer":"NBA","income":4732.85,"cost":1125.16,"profitMargin":0.762,"endDate":"02/28/2026","gp":3607.69,"gpPct":0.762266,"month":"2026-02"},{"project":"0226NYA-MAC","customer":"NYA Studios","income":12702.5,"cost":1929.33,"profitMargin":0.848,"endDate":"02/28/2026","gp":10773.17,"gpPct":0.848114,"month":"2026-02"},{"project":"0226PLA-MAY","customer":"Planet Events","income":3000.0,"cost":525.03,"profitMargin":0.825,"endDate":"02/28/2026","gp":2474.97,"gpPct":0.82499,"month":"2026-02"},{"project":"0226ROB-LUC (DM)","customer":"Robin Holt","income":6335.0,"cost":2150.0,"profitMargin":0.661,"endDate":"02/28/2026","gp":4185.0,"gpPct":0.660616,"month":"2026-02"},{"project":"0226WA-L06 GOAT","customer":"WESTFIELD EVENTS","income":11890.0,"cost":6575.36,"profitMargin":0.447,"endDate":"02/28/2026","gp":5314.64,"gpPct":0.446984,"month":"2026-02"},{"project":"0226WA-L08 Superbowl","customer":"WESTFIELD EVENTS","income":900.0,"cost":600.06,"profitMargin":0.333,"endDate":"02/28/2026","gp":299.94,"gpPct":0.333267,"month":"2026-02"},{"project":"0226WC-L12 LA Tourism","customer":"WESTFIELD EVENTS","income":3837.5,"cost":2500.19,"profitMargin":0.348,"endDate":"02/28/2026","gp":1337.31,"gpPct":0.348485,"month":"2026-02"}]};
+
+// ==================== HELPERS ====================
+const $ = id => document.getElementById(id);
+const fmt = (n, decimals=0) => n == null ? '—' : new Intl.NumberFormat('en-US', {style:'currency', currency:'USD', minimumFractionDigits:decimals, maximumFractionDigits:decimals}).format(n);
+const fmtK = n => n >= 1000000 ? `$${(n/1000000).toFixed(1)}M` : n >= 1000 ? `$${(n/1000).toFixed(0)}K` : fmt(n);
+const fmtPct = n => n == null ? '—' : (n*100).toFixed(1) + '%';
+const moLabel = m => { const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return mo[parseInt(m.split('-')[1])-1]||m; };
+const colorPos = '#196B24'; const colorNeg = '#C0392B'; const colorBlue = '#156082'; const colorWarn = '#E97132'; const colorSky = '#0F9ED5';
+const chartDefaults = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:'#0E2841', titleColor:'#FFFFFF', bodyColor:'rgba(255,255,255,0.75)', borderColor:'#156082', borderWidth:1, padding:10}}, scales:{x:{grid:{color:'#E8E8E8'}, ticks:{color:'#4A5568', font:{family:"'Source Code Pro', monospace", size:10}}}, y:{grid:{color:'#E8E8E8'}, ticks:{color:'#4A5568', font:{family:"'Source Code Pro', monospace", size:10}, callback: v => '$' + (Math.abs(v)>=1000?(v/1000).toFixed(0)+'K':v)}}}};
+
+// ==================== TABS ====================
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  $('panel-'+id).classList.add('active');
+}
+
+// ==================== CHARTS ====================
+function makeChart(id, type, labels, datasets, extraOpts={}) {
+  const ctx = $(id).getContext('2d');
+  return new Chart(ctx, { type, data:{labels, datasets}, options:{...chartDefaults, ...extraOpts} });
+}
+
+const months = DATA.productionForecast.map(r => moLabel(r.month));
+
+// FORECAST charts
+makeChart('chartRevTA', 'bar', months, [
+  { label:'Target', data: DATA.productionForecast.map(r=>r.targetRev/1000), backgroundColor:'rgba(15,158,213,0.25)', borderColor:colorSky, borderWidth:1.5, borderRadius:3 },
+  { label:'Actual', data: DATA.productionForecast.map(r=>r.actualRev/1000), backgroundColor:'rgba(21,96,130,0.3)', borderColor:colorBlue, borderWidth:1.5, borderRadius:3 }
+], { plugins:{...chartDefaults.plugins, legend:{display:true, labels:{color:'#4A5568', font:{family:"'Source Code Pro'",size:10}, boxWidth:12}}} });
+
+makeChart('chartGPTA', 'bar', months, [
+  { label:'Target GP', data: DATA.productionForecast.map(r=>r.targetGP/1000), backgroundColor:'rgba(15,158,213,0.25)', borderColor:colorSky, borderWidth:1.5, borderRadius:3 },
+  { label:'Actual GP', data: DATA.productionForecast.map(r=>r.actualGP/1000), backgroundColor:'rgba(25,107,36,0.25)', borderColor:colorPos, borderWidth:1.5, borderRadius:3 }
+], { plugins:{...chartDefaults.plugins, legend:{display:true, labels:{color:'#4A5568', font:{family:"'Source Code Pro'",size:10}, boxWidth:12}}} });
+
+makeChart('chartRevVar', 'bar', months, [{
+  label:'Rev A/T', data: DATA.productionForecast.map(r=>r.revAT/1000),
+  backgroundColor: DATA.productionForecast.map(r=>r.revAT>=0?'rgba(25,107,36,0.3)':'rgba(192,57,43,0.3)'),
+  borderColor: DATA.productionForecast.map(r=>r.revAT>=0?colorPos:colorNeg),
+  borderWidth:1.5, borderRadius:3
+}]);
+
+// OVERHEAD charts
+makeChart('chartGPOH', 'bar', months, [
+  { label:'Overhead', data: DATA.gpToOverhead.map(r=>r.overhead/1000), backgroundColor:'rgba(233,113,50,0.2)', borderColor:colorWarn, borderWidth:1.5, borderRadius:3 },
+  { label:'Actual GP', data: DATA.gpToOverhead.map(r=>r.actualGP/1000), backgroundColor:'rgba(21,96,130,0.28)', borderColor:colorBlue, borderWidth:1.5, borderRadius:3 }
+], { plugins:{...chartDefaults.plugins, legend:{display:true, labels:{color:'#4A5568', font:{family:"'Source Code Pro'",size:10}, boxWidth:12}}} });
+
+makeChart('chartActVsBudget', 'bar', months, [{
+  label:'Act vs Budget', data: DATA.gpToOverhead.map(r=>r.actualVsBudget/1000),
+  backgroundColor: DATA.gpToOverhead.map(r=>r.actualVsBudget>=0?'rgba(25,107,36,0.3)':'rgba(192,57,43,0.3)'),
+  borderColor: DATA.gpToOverhead.map(r=>r.actualVsBudget>=0?colorPos:colorNeg),
+  borderWidth:1.5, borderRadius:3
+}]);
+
+// SUMMARY charts
+makeChart('chartSummaryRev', 'bar', DATA.productionSummary.map(r=>r.month), [
+  { label:'Revenue', data: DATA.productionSummary.map(r=>r.revenue/1000), backgroundColor:'rgba(15,158,213,0.25)', borderColor:colorSky, borderWidth:1.5, borderRadius:3 },
+  { label:'Gross Profit', data: DATA.productionSummary.map(r=>r.grossProfit/1000), backgroundColor:'rgba(21,96,130,0.3)', borderColor:colorBlue, borderWidth:1.5, borderRadius:3 }
+], { plugins:{...chartDefaults.plugins, legend:{display:true, labels:{color:'#4A5568', font:{family:"'Source Code Pro'",size:10}, boxWidth:12}}} });
+
+makeChart('chartSummaryMargin', 'line', DATA.productionSummary.map(r=>r.month), [{
+  label:'GP %', data: DATA.productionSummary.map(r=>parseFloat((r.gpMargin*100).toFixed(1))),
+  borderColor:colorWarn, backgroundColor:'rgba(233,113,50,0.1)', borderWidth:2, pointRadius:4,
+  pointBackgroundColor:colorWarn, tension:0.3, fill:true
+}], { scales:{...chartDefaults.scales, y:{...chartDefaults.scales.y, ticks:{...chartDefaults.scales.y.ticks, callback:v=>v+'%'}}} });
+
+// ==================== STATIC TABLES ====================
+function renderForecast() {
+  const tb = $('tbodyForecast');
+  tb.innerHTML = DATA.productionForecast.map(r => `<tr>
+    <td class="month-col">${moLabel(r.month)}</td>
+    <td class="num">${fmt(r.targetRev)}</td>
+    <td class="num">${fmt(r.actualRev)}</td>
+    <td class="num ${r.revAT>=0?'pos-val':'neg-val'}">${r.revAT>=0?'+':''}${fmt(r.revAT)}</td>
+    <td class="num">${fmt(r.targetGP)}</td>
+    <td class="num">${fmt(r.actualGP)}</td>
+    <td class="num ${r.gpAT>=0?'pos-val':'neg-val'}">${r.gpAT>=0?'+':''}${fmt(r.gpAT)}</td>
+    <td class="num">${fmtPct(r.gpPct)}</td>
+  </tr>`).join('');
+}
+
+function renderOverhead() {
+  const tb = $('tbodyOverhead');
+  tb.innerHTML = DATA.gpToOverhead.map(r => `<tr>
+    <td class="month-col">${moLabel(r.month)}</td>
+    <td class="num">${fmt(r.overhead)}</td>
+    <td class="num">${fmt(r.budgetGP)}</td>
+    <td class="num">${fmt(r.actualGP)}</td>
+    <td class="num">${fmtPct(r.gpPct)}</td>
+    <td class="num ${r.actualVsBudget>=0?'pos-val':'neg-val'}">${r.actualVsBudget>=0?'+':''}${fmt(r.actualVsBudget)}</td>
+    <td class="num ${r.actualVsOverhead>=0?'pos-val':'neg-val'}">${r.actualVsOverhead>=0?'+':''}${fmt(r.actualVsOverhead)}</td>
+    <td class="num ${r.pctOverhead>=0?'pos-val':'neg-val'}">${r.pctOverhead>=0?'+':''}${fmtPct(r.pctOverhead)}</td>
+  </tr>`).join('');
+}
+
+function renderSummary() {
+  const tb = $('tbodySummary');
+  const maxRev = Math.max(...DATA.productionSummary.map(r=>r.revenue));
+  tb.innerHTML = DATA.productionSummary.map(r => {
+    const w = Math.round((r.gpMargin)*100);
+    const barColor = r.gpMargin > 0.6 ? colorPos : r.gpMargin < 0.5 ? colorNeg : colorWarn;
+    return `<tr>
+      <td class="month-col">${r.month}</td>
+      <td class="num">${fmt(r.revenue)}</td>
+      <td class="num pos-val">${fmt(r.grossProfit)}</td>
+      <td class="num">${fmtPct(r.gpMargin)}</td>
+      <td><div class="var-bar-wrap"><div class="var-bar"><div class="var-bar-fill" style="width:${w}%;background:${barColor}"></div></div><span style="font-family:var(--mono);font-size:11px;color:${barColor}">${w}%</span></div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ==================== HUBSPOT TABLE ====================
+let hsData = [...DATA.hubspot];
+let hsSortCol = 'actualRev', hsSortDir = -1;
+let hsPage = 1; const hsPerPage = 20;
+
+function stageBadge(s) {
+  if (!s) return '';
+  if (s === 'Closed Won') return `<span class="badge badge-won">${s}</span>`;
+  if (s === 'Bid Accepted') return `<span class="badge badge-accept">${s}</span>`;
+  if (s === 'Bid Sent') return `<span class="badge badge-sent">${s}</span>`;
+  if (s.includes('Revision')) return `<span class="badge badge-rev">${s}</span>`;
+  return `<span class="badge badge-prequal">${s}</span>`;
+}
+
+function populateHSFilters() {
+  const months = [...new Set(DATA.hubspot.map(r=>r.month))].filter(Boolean).sort();
+  const owners = [...new Set(DATA.hubspot.map(r=>r.dealOwner))].filter(Boolean).sort();
+  const mf = $('hs-month-filter'); const of = $('hs-owner-filter');
+  months.forEach(m => { const o = document.createElement('option'); o.value=m; o.textContent=moLabel(m)+' '+m.split('-')[0]; mf.appendChild(o); });
+  owners.forEach(o => { const el = document.createElement('option'); el.value=o; el.textContent=o; of.appendChild(el); });
+}
+
+function filterHS() {
+  const q = $('hs-search').value.toLowerCase();
+  const stage = $('hs-stage-filter').value;
+  const month = $('hs-month-filter').value;
+  const owner = $('hs-owner-filter').value;
+  hsData = DATA.hubspot.filter(r => {
+    const text = (r.dealName+r.projectId+r.dealOwner).toLowerCase();
+    return (!q || text.includes(q)) && (!stage || r.dealStage===stage) && (!month || r.month===month) && (!owner || r.dealOwner===owner);
+  });
+  hsPage = 1;
+  renderHS();
+}
+
+function sortHS(col) {
+  if (hsSortCol === col) hsSortDir *= -1;
+  else { hsSortCol = col; hsSortDir = -1; }
+  filterHS();
+}
+
+function renderHS() {
+  hsData.sort((a,b) => {
+    let av = a[hsSortCol]||'', bv = b[hsSortCol]||'';
+    if (typeof av === 'number') return (av-bv)*hsSortDir;
+    return String(av).localeCompare(String(bv))*hsSortDir;
+  });
+  document.querySelectorAll('#panel-hubspot thead th').forEach(th => { th.classList.remove('sort-asc','sort-desc'); });
+
+  const start = (hsPage-1)*hsPerPage, end = start+hsPerPage;
+  const page = hsData.slice(start, end);
+  const tb = $('tbodyHS');
+  tb.innerHTML = page.map(r => `<tr>
+    <td class="text-col">${r.dealName}</td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--text2)">${r.projectId||'—'}</td>
+    <td>${stageBadge(r.dealStage)}</td>
+    <td style="font-size:12px">${r.dealOwner||'—'}</td>
+    <td>${r.closeDate}</td>
+    <td class="num">${r.actualRev>0?fmt(r.actualRev):'—'}</td>
+    <td class="num pos-val">${r.actualGP>0?fmt(r.actualGP):'—'}</td>
+    <td class="num">${r.actualGpPct>0?fmtPct(r.actualGpPct):'—'}</td>
+    <td class="num ${r.qboAmount>0?'pos-val':'neutral-val'}">${r.qboAmount>0?fmt(r.qboAmount):'—'}</td>
+  </tr>`).join('');
+
+  // KPIs
+  const total = hsData.reduce((s,r)=>s+r.actualRev,0);
+  const totalGP = hsData.reduce((s,r)=>s+r.actualGP,0);
+  const won = hsData.filter(r=>r.dealStage==='Closed Won').length;
+  $('hs-kpi-deals').textContent = hsData.length;
+  $('hs-kpi-pipeline').textContent = fmtK(total);
+  $('hs-kpi-gp').textContent = fmtK(totalGP);
+  $('hs-kpi-won').textContent = won;
+
+  renderHSPagination();
+}
+
+function renderHSPagination() {
+  const pages = Math.ceil(hsData.length/hsPerPage);
+  const el = $('hs-pagination');
+  el.innerHTML = `<span>${hsData.length} deals · showing ${Math.min((hsPage-1)*hsPerPage+1,hsData.length)}–${Math.min(hsPage*hsPerPage,hsData.length)}</span>
+    <div class="page-btns">
+      <button class="page-btn" onclick="hsChangePage(-1)" ${hsPage===1?'disabled':''}>←</button>
+      ${Array.from({length:Math.min(pages,7)},(_,i)=>`<button class="page-btn ${i+1===hsPage?'active':''}" onclick="hsGoPage(${i+1})">${i+1}</button>`).join('')}
+      <button class="page-btn" onclick="hsChangePage(1)" ${hsPage>=pages?'disabled':''}>→</button>
+    </div>`;
+}
+
+function hsChangePage(d) { hsPage += d; renderHS(); }
+function hsGoPage(p) { hsPage = p; renderHS(); }
+
+// ==================== QBO TABLE ====================
+let qboData = DATA.qbo.filter(r=>r.project&&r.income>0);
+let qboSortCol = 'income', qboSortDir = -1;
+let qboPage = 1; const qboPerPage = 20;
+
+function populateQBOFilters() {
+  const months = [...new Set(qboData.map(r=>r.month))].filter(Boolean).sort();
+  const mf = $('qbo-month-filter');
+  months.forEach(m => { const o = document.createElement('option'); o.value=m; o.textContent=moLabel(m)+' '+m.split('-')[0]; mf.appendChild(o); });
+}
+
+function filterQBO() {
+  const q = $('qbo-search').value.toLowerCase();
+  const month = $('qbo-month-filter').value;
+  const base = DATA.qbo.filter(r=>r.project&&r.income>0);
+  qboData = base.filter(r => {
+    const text = (r.project+r.customer).toLowerCase();
+    return (!q || text.includes(q)) && (!month || r.month===month);
+  });
+  qboPage = 1;
+  renderQBO();
+}
+
+function sortQBO(col) {
+  if (qboSortCol === col) qboSortDir *= -1;
+  else { qboSortCol = col; qboSortDir = -1; }
+  filterQBO();
+}
+
+function renderQBO() {
+  qboData.sort((a,b) => {
+    let av = a[qboSortCol]||'', bv = b[qboSortCol]||'';
+    if (typeof av === 'number') return (av-bv)*qboSortDir;
+    return String(av).localeCompare(String(bv))*qboSortDir;
+  });
+
+  const start = (qboPage-1)*qboPerPage, end = start+qboPerPage;
+  const page = qboData.slice(start, end);
+  const tb = $('tbodyQBO');
+  tb.innerHTML = page.map(r => `<tr>
+    <td class="text-col">${r.project}</td>
+    <td style="font-size:12px">${r.customer}</td>
+    <td>${moLabel(r.month)}</td>
+    <td class="num">${fmt(r.income)}</td>
+    <td class="num neg-val">${r.cost>0?fmt(r.cost):'—'}</td>
+    <td class="num pos-val">${fmt(r.gp)}</td>
+    <td class="num">${fmtPct(r.gpPct)}</td>
+    <td>${r.endDate}</td>
+  </tr>`).join('');
+
+  // KPIs
+  const totIncome = qboData.reduce((s,r)=>s+r.income,0);
+  const totGP = qboData.reduce((s,r)=>s+r.gp,0);
+  const avgMargin = totIncome>0 ? totGP/totIncome : 0;
+  $('qbo-kpi-projects').textContent = qboData.length;
+  $('qbo-kpi-income').textContent = fmtK(totIncome);
+  $('qbo-kpi-gp').textContent = fmtK(totGP);
+  $('qbo-kpi-margin').textContent = fmtPct(avgMargin);
+
+  renderQBOPagination();
+}
+
+function renderQBOPagination() {
+  const pages = Math.ceil(qboData.length/qboPerPage);
+  const el = $('qbo-pagination');
+  el.innerHTML = `<span>${qboData.length} projects · showing ${Math.min((qboPage-1)*qboPerPage+1,qboData.length)}–${Math.min(qboPage*qboPerPage,qboData.length)}</span>
+    <div class="page-btns">
+      <button class="page-btn" onclick="qboChangePage(-1)" ${qboPage===1?'disabled':''}>←</button>
+      ${Array.from({length:Math.min(pages,7)},(_,i)=>`<button class="page-btn ${i+1===qboPage?'active':''}" onclick="qboGoPage(${i+1})">${i+1}</button>`).join('')}
+      <button class="page-btn" onclick="qboChangePage(1)" ${qboPage>=pages?'disabled':''}>→</button>
+    </div>`;
+}
+
+function qboChangePage(d) { qboPage += d; renderQBO(); }
+function qboGoPage(p) { qboPage = p; renderQBO(); }
+
+// ==================== CSV UPLOAD ====================
+function handleCSVUpload(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const rows = parseCSV(text);
+    if (!rows.length) return;
+    const headers = rows[0].map(h => h.trim().toLowerCase().replace(/\s+/g,'_'));
+    const data = rows.slice(1).filter(r=>r.some(c=>c)).map(row => {
+      const obj = {};
+      headers.forEach((h,i) => obj[h] = row[i]||'');
+      return obj;
+    });
+
+    if (type === 'hubspot') {
+      const mapped = data.map(r => ({
+        recordId: r['record_id']||r['id']||'',
+        dealName: r['deal_name']||r['name']||'',
+        projectId: r['project_id']||r['deal_id']||'',
+        dealStage: r['deal_stage']||r['stage']||'',
+        closeDate: r['close_date']||r['closedate']||'',
+        dealOwner: r['deal_owner']||r['owner']||'',
+        amount: parseFloat(r['amount'])||0,
+        gp: parseFloat(r['gp'])||0,
+        month: r['month']||'',
+        qboAmount: parseFloat(r['qbo_amount'])||0,
+        qboGP: parseFloat(r['qbo_gp'])||0,
+        actualRev: parseFloat(r['actual_rev']||r['amount'])||0,
+        actualGP: parseFloat(r['actual_gp']||r['gp'])||0,
+        actualGpPct: parseFloat(r['actual_gp_%']||r['gp%'])||0.55,
+      })).filter(r=>r.dealName);
+      DATA.hubspot = mapped;
+      hsData = [...DATA.hubspot];
+      filterHS();
+      showUploadSuccess('hubspot-upload-success', file.name, data.length);
+    } else {
+      const mapped = data.map(r => ({
+        project: r['project']||'',
+        customer: r['customer']||'',
+        income: parseFloat(r['income'])||0,
+        cost: parseFloat(r['cost'])||0,
+        profitMargin: parseFloat(r['profit_margin'])||0,
+        endDate: r['end_date']||'',
+        gp: parseFloat(r['gp'])||0,
+        gpPct: parseFloat(r['gp_%']||r['gp_pct'])||0,
+        month: r['month']||'',
+      })).filter(r=>r.project&&r.income>0);
+      DATA.qbo = mapped;
+      qboData = [...DATA.qbo];
+      filterQBO();
+      showUploadSuccess('qbo-upload-success', file.name, data.length);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function showUploadSuccess(id, filename, count) {
+  const el = $(id);
+  el.style.display='flex';
+  el.className='upload-success';
+  el.innerHTML=`<span class="icon">✓</span><span>Loaded <strong>${filename}</strong> — ${count} rows imported successfully</span>`;
+}
+
+function parseCSV(text) {
+  const rows = []; let cur = [], field = '', inQ = false;
+  for (let i=0; i<text.length; i++) {
+    const c = text[i];
+    if (inQ) { if (c==='"' && text[i+1]==='"') { field+='"'; i++; } else if (c==='"') inQ=false; else field+=c; }
+    else if (c==='"') inQ=true;
+    else if (c===',') { cur.push(field); field=''; }
+    else if (c==='\n') { cur.push(field); rows.push(cur); cur=[]; field=''; }
+    else if (c!=='\r') field+=c;
+  }
+  if (field||cur.length) { cur.push(field); rows.push(cur); }
+  return rows;
+}
+
+// Drag & drop
+['hsUploadZone','qboUploadZone'].forEach(id => {
+  const el = $(id);
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag-over'); });
+  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('drop', e => { e.preventDefault(); el.classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f) { const inp=el.querySelector('input'); inp.files=e.dataTransfer.files; inp.dispatchEvent(new Event('change')); } });
+});
+
+// ==================== INIT ====================
+renderForecast();
+renderOverhead();
+renderSummary();
+populateHSFilters();
+renderHS();
+populateQBOFilters();
+renderQBO();
+</script>
+</body>
+</html>
